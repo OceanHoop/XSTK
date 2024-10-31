@@ -1,0 +1,74 @@
+#import data 
+data = read.csv("/Users/kalan/Desktop/concrete.csv")
+#print variable's name
+print(colnames(data))
+#checking NA value 
+anyNA(data)
+#assigning 
+dataclean = data
+#descriptive statistics
+summary(dataclean)
+#imprort package to draw graph
+require(pacman)
+library(tidyr)
+library(ggplot2)
+#draw histogram
+ggplot(gather(dataclean),aes(value))+geom_histogram(bins=10,col="#FF0000")+facet_wrap(~key,scales='free')
+#draw boxplot
+ggplot(gather(dataclean),aes(,value))+geom_boxplot()+facet_wrap(~key,scales="free",ncol=4)
+#draw pairs graph
+pairs(dataclean,col = "#6F8FAF", main = "PAIRPLOT")                                                                
+#remove outliers
+slag <- which(dataclean$slag %in%
+                              boxplot(dataclean$slag , plot=FALSE)$out)
+strength <- which(dataclean$strength %in% boxplot(dataclean$strength,
+                                                plot=FALSE)$out)
+water <- which(dataclean$water %in% boxplot(dataclean$water,
+                                            plot=FALSE)$out)
+superplastic <- which(dataclean$superplastic %in%
+                             boxplot(dataclean$superplastic , plot=FALSE)$out)
+fineagg <- which(dataclean$fineagg %in%
+                          boxplot(dataclean$fineagg , plot=FALSE)$out)
+age <- which(dataclean$Age.of.testing.day %in%
+                              boxplot(dataclean$Age.of.testing.day , plot=FALSE)$out)
+#assign again the new clean data
+dataclean2 <- dataclean[-c(slag, strength, water,superplastic,fineagg,age),]
+nrow(dataclean2)
+#second plot to check outliers
+ggplot(gather(dataclean2),aes(,value))+geom_boxplot()+facet_wrap(~key, scales = "free",ncol = 4)
+#Spearman correlation
+library(corrplot)
+M <- cor(dataclean2, method = 'spearman')
+corrplot(M,method = 'number' )
+#Significance test
+#strength and cement
+cement_strength <-cor.test(dataclean2$cement,dataclean2$strength, method = "spearman",exact = FALSE)
+cement_strength$p.value
+cement_strength$estimate
+cement_strength$estimate*sqrt((1000-2)/(1-cement_strength$estimate^2))
+#age and strength
+age_strength <-cor.test(dataclean2$age,dataclean2$strength, method = "spearman",exact = FALSE)
+age_strength$p.value
+age_strength$estimate
+age_strength$estimate*sqrt((1000-2)/(1-age_strength$estimate^2))
+#superplastic and ash
+ash_superplastic <-cor.test(dataclean2$ash,dataclean2$superplastic, method = "spearman",exact = FALSE)
+ash_superplastic$p.value
+ash_superplastic$estimate
+ash_superplastic$estimate*sqrt((1000-2)/(1-ash_superplastic$estimate^2))
+#superplastic and water
+water_superplastic <-cor.test(dataclean2$ash,dataclean2$superplastic, method = "spearman",exact = FALSE)
+water_superplastic$p.value
+water_superplastic$estimate
+water_superplastic$estimate*sqrt((1000-2)/(1-water_superplastic$estimate^2))
+#fitting linear regression model
+m1 = lm(strength~age+ash+cement+coarseagg+fineagg+slag+superplastic+water,data=dataclean2)
+summary(m1)
+summary(m1)$coefficient
+#Prediction and graph
+library(Metrics)
+plot(predict(m1),dataclean2$strength,xlab='predicted', ylab='actual', main='Relationship between predicted and actual value')
+abline(a=0, b=1, col="red")
+#Measure the accuracy of the model
+mae(dataclean2$strength,predict(m1))#Mean absolute value
+summary(m1)$adj.r.squared#R squared 
